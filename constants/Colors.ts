@@ -4,43 +4,45 @@
  */
 
 const palette = {
-  canopy: '#1B3022', // Deep Jungle Green
-  earth: '#BC8F4F',  // Sand/Old Paper Ocre
-  leather: '#3E2723', // Worn Leather Brown
-  gold: '#FFD700',    // Idol Gold
-  blood: '#8B0000',   // Predator Blood Red
-  river: '#2E5A88',   // River Blue (Stealth)
-  parchment: '#F4EBD0', // Light Parchment for backgrounds
-  mud: '#2C1E16',     // Darker mud for depth
+  parchment: '#F4EDE0',
+  cream: '#FAF6EE',
+  inkDark: '#1A0E05',
+  inkMid: '#3D2410',
+  inkLight: '#7A5C3A',
+  inkFaint: '#C4A882',
+  hunterRed: '#C0392B',
+  preyGreen: '#2D6A4F',
+  alertAmber: '#D4830A',
+  canopy: '#0D0802', // Very dark for jungle background
 };
 
 export const Colors = {
   light: {
-    text: palette.leather,
+    text: palette.inkDark,
     background: palette.parchment,
-    tint: palette.earth,
-    icon: palette.leather,
-    tabIconDefault: palette.leather,
-    tabIconSelected: palette.earth,
-    primary: palette.canopy,
-    secondary: palette.earth,
-    accent: palette.gold,
-    error: palette.blood,
-    surface: '#FFFFFF',
-    border: palette.leather,
+    tint: palette.inkMid,
+    icon: palette.inkDark,
+    tabIconDefault: palette.inkDark,
+    tabIconSelected: palette.inkMid,
+    primary: palette.hunterRed,
+    secondary: palette.inkLight,
+    accent: palette.alertAmber,
+    error: palette.hunterRed,
+    surface: palette.cream,
+    border: palette.inkFaint,
   },
   dark: {
-    text: palette.earth,
+    text: palette.parchment,
     background: palette.canopy,
-    tint: palette.gold,
-    icon: palette.earth,
-    tabIconDefault: palette.earth,
-    tabIconSelected: palette.gold,
-    primary: palette.canopy,
-    secondary: palette.leather,
-    accent: palette.gold,
-    error: palette.blood,
-    surface: palette.mud,
-    border: palette.earth,
+    tint: palette.parchment,
+    icon: palette.parchment,
+    tabIconDefault: palette.inkFaint,
+    tabIconSelected: palette.parchment,
+    primary: palette.hunterRed,
+    secondary: palette.inkMid,
+    accent: palette.alertAmber,
+    error: palette.hunterRed,
+    surface: palette.inkDark,
+    border: palette.inkLight,
   },
 };

@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { ExpeditionText } from './ExpeditionText';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
+import { Typography } from '@/constants/Typography';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 interface ExpeditionButtonProps extends TouchableOpacityProps {
@@ -34,11 +35,13 @@ export function ExpeditionButton({
   };
 
   const getVariantStyles = () => {
+    const textBase = { fontFamily: Typography.family.title };
+
     switch (variant) {
       case 'secondary':
         return {
           button: { backgroundColor: colors.secondary },
-          text: { color: colors.background },
+          text: { ...textBase, color: colors.background },
         };
       case 'outline':
         return {
@@ -47,7 +50,7 @@ export function ExpeditionButton({
             borderWidth: Spacing.borderWidth.medium,
             borderColor: colors.secondary 
           },
-          text: { color: colors.secondary },
+          text: { ...textBase, color: colors.secondary },
         };
       case 'danger':
         return {

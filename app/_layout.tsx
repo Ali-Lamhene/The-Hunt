@@ -6,11 +6,12 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 
-import { Arvo_700Bold } from '@expo-google-fonts/arvo';
+import { BebasNeue_400Regular } from '@expo-google-fonts/bebas-neue';
+import { SpecialElite_400Regular } from '@expo-google-fonts/special-elite';
 import { 
-  CrimsonText_400Regular, 
-  CrimsonText_700Bold 
-} from '@expo-google-fonts/crimson-text';
+  DMSans_400Regular, 
+  DMSans_700Bold 
+} from '@expo-google-fonts/dm-sans';
 
 import { Colors } from '@/constants/Colors';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -25,9 +26,10 @@ function RootLayoutNav() {
   const router = useRouter();
 
   const [fontsLoaded, fontError] = useFonts({
-    Arvo_700Bold,
-    CrimsonText_400Regular,
-    CrimsonText_700Bold,
+    BebasNeue_400Regular,
+    SpecialElite_400Regular,
+    DMSans_400Regular,
+    DMSans_700Bold,
   });
 
   useEffect(() => {
@@ -82,7 +84,6 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={customTheme}>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(app)" />
         <Stack.Screen name="(game)" />

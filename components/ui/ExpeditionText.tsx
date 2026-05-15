@@ -18,18 +18,15 @@ export function ExpeditionText({
   const themeColor = useThemeColor({}, 'text');
   
   const getFontFamily = () => {
-    switch (variant) {
-      case 'title':
-        return Typography.family.title;
-      case 'mono':
-        return Typography.family.mono;
-      case 'bodyBold':
-        return Typography.family.bodyBold;
-      case 'journal':
-      case 'body':
-      default:
-        return Typography.family.body;
-    }
+    const fontFamilies = {
+      title: Typography.family.title,
+      journal: Typography.family.subtitle,
+      body: Typography.family.body,
+      bodyBold: Typography.family.bodyBold,
+      mono: Typography.family.mono,
+    };
+
+    return fontFamilies[variant] || Typography.family.body;
   };
 
   return (

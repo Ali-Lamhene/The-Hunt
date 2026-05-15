@@ -5,9 +5,10 @@
 
 export const Typography = {
   family: {
-    title: 'Arvo_700Bold',        // Display / Crate / Ruins
-    body: 'CrimsonText_400Regular', // Journal / Handwritten
-    bodyBold: 'CrimsonText_700Bold',
+    title: 'BebasNeue_400Regular', // Display / Crate / Ruins
+    subtitle: 'SpecialElite_400Regular', // Typewriter / Artifact
+    body: 'DMSans_400Regular', // Modern / Clean
+    bodyBold: 'DMSans_700Bold',
     mono: 'monospace',            // Compass / Timers
   },
   size: {
