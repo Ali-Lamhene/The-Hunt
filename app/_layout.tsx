@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -15,6 +15,7 @@ import {
 
 import { Colors } from '@/constants/Colors';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { ExpeditionSplashScreen } from '@/components/ui/ExpeditionSplashScreen';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -24,6 +25,7 @@ function RootLayoutNav() {
   const { user, isLoading: isAuthLoading, isConnected } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const [showCustomSplash, setShowCustomSplash] = React.useState(true);
 
   const [fontsLoaded, fontError] = useFonts({
     BebasNeue_400Regular,
@@ -34,17 +36,17 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if ((fontsLoaded || fontError) && !isAuthLoading) {
+      // On cache le splash natif dès que les polices et l'auth sont OK
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError, isAuthLoading]);
 
   useEffect(() => {
-    if (isAuthLoading || !fontsLoaded) return;
+    // Si on affiche encore le splash personnalisé, on ne fait pas de redirection
+    if (showCustomSplash || isAuthLoading || !fontsLoaded) return;
 
     const inAuthGroup = segments[0] === '(auth)';
 
-    // 1. Priorité absolue : Connexion Internet
-    // Si déconnecté, on force le retour vers la Gateway (qui gère l'état offline)
     if (isConnected === false) {
       if (!inAuthGroup) {
         router.replace('/(auth)');
@@ -52,16 +54,14 @@ function RootLayoutNav() {
       return;
     }
 
-    // 2. Priorité Identité : Si pas d'utilisateur, direction Auth
     if (!user) {
       if (!inAuthGroup) {
         router.replace('/(auth)');
       }
     } else if (inAuthGroup) {
-      // Si connecté et dans auth, on envoie vers l'app
       router.replace('/(app)');
     }
-  }, [user, isAuthLoading, isConnected, segments, fontsLoaded]);
+  }, [user, isAuthLoading, isConnected, segments, fontsLoaded, showCustomSplash]);
 
   if ((!fontsLoaded && !fontError) || isAuthLoading) {
     return null;
@@ -90,6 +90,9 @@ function RootLayoutNav() {
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      {showCustomSplash && (
+        <ExpeditionSplashScreen onAnimationComplete={() => setShowCustomSplash(false)} />
+      )}
     </ThemeProvider>
   );
 }
