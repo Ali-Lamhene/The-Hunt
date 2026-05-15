@@ -26,6 +26,7 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
   const [showCustomSplash, setShowCustomSplash] = React.useState(true);
+  const [navigationReady, setNavigationReady] = React.useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
     BebasNeue_400Regular,
@@ -36,32 +37,29 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if ((fontsLoaded || fontError) && !isAuthLoading) {
-      // On cache le splash natif dès que les polices et l'auth sont OK
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError, isAuthLoading]);
 
+  // Redirection — dès que l'auth est connue (même pendant le splash)
   useEffect(() => {
-    // Si on affiche encore le splash personnalisé, on ne fait pas de redirection
-    if (showCustomSplash || isAuthLoading || !fontsLoaded) return;
+    if (isAuthLoading || !fontsLoaded) return;  // ← showCustomSplash retiré intentionnellement
 
     const inAuthGroup = segments[0] === '(auth)';
 
     if (isConnected === false) {
-      if (!inAuthGroup) {
-        router.replace('/(auth)');
-      }
+      if (!inAuthGroup) router.replace('/(auth)');
+      setNavigationReady(true);
       return;
     }
 
     if (!user) {
-      if (!inAuthGroup) {
-        router.replace('/(auth)');
-      }
+      if (!inAuthGroup) router.replace('/(auth)');
     } else if (inAuthGroup) {
       router.replace('/(app)');
     }
-  }, [user, isAuthLoading, isConnected, segments, fontsLoaded, showCustomSplash]);
+    setNavigationReady(true);
+  }, [user, isAuthLoading, isConnected, segments, fontsLoaded]);
 
   if ((!fontsLoaded && !fontError) || isAuthLoading) {
     return null;
@@ -83,7 +81,9 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={customTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
+      {/* Le Stack est monté mais invisible sous le splash —
+          on l'affiche seulement quand la navigation est prête */}
+      <Stack screenOptions={{ headerShown: false, animation: 'none' }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(app)" />
         <Stack.Screen name="(game)" />
@@ -91,7 +91,12 @@ function RootLayoutNav() {
       </Stack>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       {showCustomSplash && (
-        <ExpeditionSplashScreen onAnimationComplete={() => setShowCustomSplash(false)} />
+        <ExpeditionSplashScreen
+          onAnimationComplete={() => {
+            // On attend que la redirection soit déjà prête avant de retirer le splash
+            setShowCustomSplash(false);
+          }}
+        />
       )}
     </ThemeProvider>
   );

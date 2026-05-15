@@ -1,132 +1,268 @@
-import { StyleSheet, View, Animated } from 'react-native';
-import { ExpeditionView } from '@/components/ui/ExpeditionView';
+import {
+  StyleSheet,
+  View,
+  Animated,
+  ImageBackground,
+  TouchableOpacity,
+  Text,
+  Dimensions,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ExpeditionText } from '@/components/ui/ExpeditionText';
-import { ExpeditionButton } from '@/components/ui/ExpeditionButton';
-import { Spacing } from '@/constants/Spacing';
 import { useAuth } from '@/context/AuthContext';
 import { useRef, useEffect } from 'react';
-import Svg, { Path, G, Circle, Line } from 'react-native-svg';
+import Svg, { Line, Rect, Circle, Path } from 'react-native-svg';
 
-const JungleCorners = ({ intensity = 1, dark = false }: { intensity?: number; dark?: boolean }) => {
-  const col = dark ? "#e8d5a3" : "#1a5c30";
-  const op = dark ? 0.13 * intensity : 0.08 * intensity;
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Svg width="100%" height="100%" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
-        <G opacity={op} fill={col}>
-          <Path d="M-20 -10 Q60 10 90 80 Q50 95 10 60 Q-15 35 -20 -10Z"/>
-          <Path d="M-30 30 Q50 25 75 100 Q30 105 -10 70 Q-28 55 -30 30Z"/>
-        </G>
-        <G opacity={op} fill={col}>
-          <Path d="M410 -10 Q330 10 300 80 Q340 95 380 60 Q415 35 410 -10Z"/>
-          <Path d="M420 30 Q340 25 315 100 Q360 105 400 70 Q418 55 420 30Z"/>
-        </G>
-      </Svg>
-    </View>
-  );
-};
+const { width: W } = Dimensions.get('window');
 
 export default function AppIndex() {
   const { user, signOut } = useAuth();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
+
+  const fade  = useRef(new Animated.Value(0)).current;
+  const slide = useRef(new Animated.Value(16)).current;
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fade,  { toValue: 1, duration: 1400, useNativeDriver: true }),
+      Animated.spring(slide, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
+    ]).start();
   }, []);
 
   return (
-    <View style={styles.container}>
-      <JungleCorners dark intensity={0.8} />
-      
-      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        <View style={styles.header}>
-          <ExpeditionText variant="title" size="xl" style={styles.title}>
-            Camp de Base
-          </ExpeditionText>
-          <ExpeditionText variant="journal" style={styles.welcome}>
-            Bienvenue, Agent <ExpeditionText variant="title" size="sm" style={{color: "#c0392b"}}>{user?.username}</ExpeditionText>.{"\n"}
-            L'expédition est prête à démarrer.
-          </ExpeditionText>
+    <ImageBackground
+      source={require('@/assets/images/home-bg.png')}
+      style={styles.root}
+      resizeMode="cover"
+    >
+      <View style={styles.veil} />
+
+      <Animated.View
+        style={[
+          styles.layout,
+          {
+            opacity: fade,
+            transform: [{ translateY: slide }],
+            paddingTop: insets.top + 16,
+            paddingBottom: insets.bottom + 24,
+          },
+        ]}
+      >
+
+        {/* ── HAUT : bouton déconnexion discret ─────────────── */}
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={signOut} activeOpacity={0.6} style={styles.logoutBtn}>
+            <Text style={styles.logoutText}>DÉCONNEXION</Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.card}>
-          <ExpeditionText variant="mono" size="xs" style={styles.cardLabel}>ÉTAT DE LA MISSION</ExpeditionText>
-          <ExpeditionText variant="journal" style={styles.cardText}>
-            "Les capteurs indiquent une activité inhabituelle dans le secteur 7. 
-            Préparez votre équipement et attendez les ordres."
+        {/* ── MILIEU : titre + motifs géométriques ──────────── */}
+        <View style={styles.hero}>
+
+          {/* Règle supérieure */}
+          <Svg width={W - 56} height={20} style={styles.ruleRow}>
+            <Line x1={0} y1={10} x2={W - 56} y2={10} stroke="#3d4e38" strokeWidth={1}/>
+            {[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9].map((p, i) => (
+              <Line key={i}
+                x1={(W - 56) * p} y1={i === 4 ? 3 : 5}
+                x2={(W - 56) * p} y2={i === 4 ? 17 : 15}
+                stroke="#3d4e38" strokeWidth={1} opacity={i === 4 ? 1 : 0.5}
+              />
+            ))}
+            <Circle cx={(W - 56) / 2} cy={10} r={3} fill="none" stroke="#5a7052" strokeWidth={1}/>
+          </Svg>
+
+          {/* Titre */}
+          <ExpeditionText
+            variant="title"
+            style={styles.title}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            THE HUNT
           </ExpeditionText>
+
+          {/* Règle inférieure avec coins */}
+          <Svg width={W - 56} height={24} style={styles.ruleRow}>
+            <Line x1={0} y1={12} x2={W - 56} y2={12} stroke="#3d4e38" strokeWidth={1}/>
+            {/* Coin bas gauche */}
+            <Path d="M 0 4 L 0 20 L 12 20" fill="none" stroke="#5a7052" strokeWidth={1.5}/>
+            {/* Coin bas droite */}
+            <Path d={`M ${W - 56} 4 L ${W - 56} 20 L ${W - 56 - 12} 20`} fill="none" stroke="#5a7052" strokeWidth={1.5}/>
+            {/* Tirets centraux */}
+            {[-12, -6, 0, 6, 12].map((offset, i) => {
+              const cx = (W - 56) / 2 + offset;
+              return (
+                <Line key={i} x1={cx} y1={7} x2={cx} y2={17}
+                  stroke="#3d4e38" strokeWidth={1} opacity={i === 2 ? 1 : 0.4}/>
+              );
+            })}
+          </Svg>
+
+          {/* Tagline */}
+          <ExpeditionText variant="mono" size="xs" style={styles.tagline}>
+            — PRÉPAREZ-VOUS POUR LA TRAQUE —
+          </ExpeditionText>
+
         </View>
-        
-        <View style={styles.actions}>
-          <ExpeditionButton 
-            title="Démarrer la Traque" 
-            variant="primary" 
-            onPress={() => {}} 
-            style={styles.actionButton}
-          />
-          <ExpeditionButton 
-            title="Quitter l'Expédition" 
-            variant="danger" 
-            onPress={signOut} 
-            style={styles.actionButton}
-          />
+
+        {/* ── BAS : bouton principal tactique ─────────────── */}
+        <View style={styles.bottom}>
+          <TouchableOpacity
+            onPress={() => {}}
+            activeOpacity={0.9}
+            style={styles.startBtn}
+          >
+            {/* Effet biseauté haut */}
+            <View style={styles.btnBevelTop} />
+            
+            {/* Décorations angles (brackets) */}
+            <View style={styles.btnBracketTL} />
+            <View style={styles.btnBracketBR} />
+
+            <View style={styles.btnContent}>
+              <Text style={styles.startBtnText}>DÉMARRER LA TRAQUE</Text>
+              {/* Petit indicateur de direction */}
+              <Svg width={18} height={18} style={{ marginLeft: 16 }}>
+                <Path d="M 0 9 L 18 9 M 12 3 L 18 9 L 12 15" stroke="#e8d5a3" strokeWidth={2.5} fill="none" />
+              </Svg>
+            </View>
+
+          </TouchableOpacity>
         </View>
+
       </Animated.View>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#0d0802',
+    backgroundColor: '#0e1210',
   },
-  content: {
+  veil: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(6, 9, 7, 0.48)',
+  },
+  layout: {
     flex: 1,
-    padding: Spacing.xl,
-    justifyContent: 'center',
-    zIndex: 2,
+    paddingHorizontal: 28,
+    justifyContent: 'space-between',
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: Spacing.huge,
+
+  // ── TOP BAR ──
+  topBar: {
+    alignItems: 'flex-end',
   },
-  title: {
-    fontSize: 42,
-    color: "#e8d5a3",
-    textAlign: 'center',
-  },
-  welcome: {
-    marginTop: Spacing.md,
-    textAlign: 'center',
-    color: "#7a5c3a",
-    lineHeight: 22,
-  },
-  card: {
-    backgroundColor: "rgba(232, 213, 163, 0.04)",
+  logoutBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: "rgba(232, 213, 163, 0.1)",
-    borderRadius: 4,
-    padding: Spacing.lg,
-    marginBottom: Spacing.huge,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(0,0,0,0.25)',
   },
-  cardLabel: {
-    color: "#c0392b",
-    marginBottom: Spacing.sm,
-    letterSpacing: 2,
+  logoutText: {
+    fontFamily: 'monospace',
+    fontSize: 9,
+    letterSpacing: 3,
+    color: 'rgba(180,190,175,0.45)',
   },
-  cardText: {
-    color: "#c4a882",
-    fontStyle: 'italic',
-  },
-  actions: {
+
+  // ── HERO ──
+  hero: {
+    alignItems: 'center',
     width: '100%',
   },
-  actionButton: {
-    marginBottom: Spacing.md,
+  ruleRow: {
+    width: '100%',
+    marginVertical: 6,
+  },
+  title: {
+    fontSize: 88,
+    color: '#e8d5a3',
+    letterSpacing: 10,
+    lineHeight: 100,
+    textShadowColor: 'rgba(0,0,0,0.95)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 15,
+    textAlign: 'center',
+    width: '100%',
+  },
+  tagline: {
+    color: '#5a6854',
+    fontSize: 13,
+    letterSpacing: 4,
+    textAlign: 'center',
+    marginTop: 10,
+    opacity: 0.75,
+  },
+
+  // ── BOUTON TACTIQUE ──
+  bottom: {
+    width: '100%',
+  },
+  startBtn: {
+    width: '100%',
+    height: 80,
+    backgroundColor: '#2d3a29',
+    borderWidth: 1,
+    borderColor: '#4a5e45',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    elevation: 10,
+  },
+  btnBevelTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  btnBracketTL: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    width: 12,
+    height: 12,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderColor: '#e8d5a3',
+    opacity: 0.6,
+  },
+  btnBracketBR: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    width: 12,
+    height: 12,
+    borderBottomWidth: 2,
+    borderRightWidth: 2,
+    borderColor: '#e8d5a3',
+    opacity: 0.6,
+  },
+  btnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  startBtnText: {
+    fontFamily: 'monospace',
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 4,
+    color: '#e8d5a3',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 });

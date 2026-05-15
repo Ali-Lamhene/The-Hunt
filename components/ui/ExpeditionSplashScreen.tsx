@@ -13,10 +13,6 @@ const LOADING_STEPS = [
   "INITIALIZING TRACKING PROTOCOLS...",
   "ESTABLISHING SECURE SATELLITE LINK...",
   "SYNCING GPS COORDINATES...",
-  "SCANNING LOCAL SECTORS...",
-  "DECRYPTING EXPEDITION DATA...",
-  "TRIANGULATING POSITION...",
-  "SYSTEM READY. HAPPY HUNTING."
 ];
 
 export function ExpeditionSplashScreen({ onAnimationComplete }: ExpeditionSplashScreenProps) {
@@ -28,7 +24,7 @@ export function ExpeditionSplashScreen({ onAnimationComplete }: ExpeditionSplash
     // Progression de 10 secondes
     Animated.timing(progressAnim, {
       toValue: 1,
-      duration: 10000,
+      duration: 3000,
       useNativeDriver: false,
     }).start(() => {
       // Transition douce vers l'app
@@ -38,7 +34,7 @@ export function ExpeditionSplashScreen({ onAnimationComplete }: ExpeditionSplash
           duration: 1000,
           useNativeDriver: true,
         }).start(onAnimationComplete);
-      }, 500);
+      }, 100);
     });
 
     // Rotation des messages
@@ -74,7 +70,6 @@ export function ExpeditionSplashScreen({ onAnimationComplete }: ExpeditionSplash
           <View style={styles.bottomSection}>
             <View style={styles.titleWrapper}>
               <ExpeditionText variant="title" style={styles.title}>THE HUNT</ExpeditionText>
-              <ExpeditionText variant="mono" size="xs" style={styles.subtitle}>TACTICAL GEOTRACKING // REAL LIFE</ExpeditionText>
             </View>
 
             <View style={styles.loaderArea}>
