@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 
@@ -13,25 +13,55 @@ import {
 } from '@expo-google-fonts/crimson-text';
 
 import { Colors } from '@/constants/Colors';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const [loaded, error] = useFonts({
+  const { user, isLoading: isAuthLoading, isConnected } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  const [fontsLoaded, fontError] = useFonts({
     Arvo_700Bold,
     CrimsonText_400Regular,
     CrimsonText_700Bold,
   });
 
   useEffect(() => {
-    if (loaded || error) {
+    if ((fontsLoaded || fontError) && !isAuthLoading) {
       SplashScreen.hideAsync();
     }
-  }, [loaded, error]);
+  }, [fontsLoaded, fontError, isAuthLoading]);
 
-  if (!loaded && !error) {
+  useEffect(() => {
+    if (isAuthLoading || !fontsLoaded) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    // 1. Priorité absolue : Connexion Internet
+    // Si déconnecté, on force le retour vers la Gateway (qui gère l'état offline)
+    if (isConnected === false) {
+      if (!inAuthGroup) {
+        router.replace('/(auth)');
+      }
+      return;
+    }
+
+    // 2. Priorité Identité : Si pas d'utilisateur, direction Auth
+    if (!user) {
+      if (!inAuthGroup) {
+        router.replace('/(auth)');
+      }
+    } else if (inAuthGroup) {
+      // Si connecté et dans auth, on envoie vers l'app
+      router.replace('/(app)');
+    }
+  }, [user, isAuthLoading, isConnected, segments, fontsLoaded]);
+
+  if ((!fontsLoaded && !fontError) || isAuthLoading) {
     return null;
   }
 
@@ -51,11 +81,22 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={customTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(app)" />
+        <Stack.Screen name="(game)" />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
   );
 }
