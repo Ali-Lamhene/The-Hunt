@@ -8,6 +8,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { ExpeditionText } from '@/components/ui/ExpeditionText';
 import { useAuth } from '@/context/AuthContext';
 import { useRef, useEffect, useState } from 'react';
@@ -70,7 +71,7 @@ const GlitchTitle = () => {
   const opacityAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const doGlitch = () => {
       let glitchCount = 0;
@@ -130,6 +131,7 @@ const GlitchTitle = () => {
 export default function AppIndex() {
   const { user, signOut } = useAuth();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const fade  = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(16)).current;
@@ -225,7 +227,7 @@ export default function AppIndex() {
         <View style={styles.bottomList}>
           {/* Bouton Créer/Initier */}
           <TouchableOpacity
-            onPress={() => {}}
+            onPress={() => router.push('/(app)/create')}
             activeOpacity={0.7}
             style={styles.listItem}
           >
