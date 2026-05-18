@@ -10,10 +10,122 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ExpeditionText } from '@/components/ui/ExpeditionText';
 import { useAuth } from '@/context/AuthContext';
-import { useRef, useEffect } from 'react';
-import Svg, { Line, Rect, Circle, Path } from 'react-native-svg';
+import { useRef, useEffect, useState } from 'react';
+import Svg, { Line, Rect, Circle, Path, Defs, Pattern } from 'react-native-svg';
+import { LogOut, Fingerprint, Radio } from 'lucide-react-native';
 
-const { width: W } = Dimensions.get('window');
+const { width: W, height: H } = Dimensions.get('window');
+
+const NoiseTexture = () => (
+  <View style={[StyleSheet.absoluteFill, { opacity: 0.12, zIndex: 1 }]} pointerEvents="none">
+    <Svg width="100%" height="100%">
+      <Defs>
+        <Pattern id="dots" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+          <Rect x="0" y="0" width="1" height="1" fill="#e8d5a3" />
+        </Pattern>
+      </Defs>
+      <Rect x="0" y="0" width="100%" height="100%" fill="url(#dots)" />
+    </Svg>
+  </View>
+);
+
+const ScannerLine = () => {
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(translateY, {
+          toValue: H,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 4000,
+          useNativeDriver: true,
+        })
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.scannerLine,
+        { transform: [{ translateY }] }
+      ]}
+    />
+  );
+};
+
+const AnimatedExpeditionText = Animated.createAnimatedComponent(ExpeditionText);
+
+const GlitchTitle = () => {
+  const originalText = "THE HUNT";
+  const [displayText, setDisplayText] = useState(originalText);
+  const chars = "!<>-_\\\\/[]{}—=+*^?#_";
+  
+  const opacityAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const doGlitch = () => {
+      let glitchCount = 0;
+      const maxGlitches = 6;
+
+      // Effet "néon défectueux" / baisse d'énergie
+      Animated.sequence([
+        Animated.timing(opacityAnim, { toValue: 0.3, duration: 40, useNativeDriver: true }),
+        Animated.timing(opacityAnim, { toValue: 0.9, duration: 60, useNativeDriver: true }),
+        Animated.timing(opacityAnim, { toValue: 0.4, duration: 40, useNativeDriver: true }),
+        Animated.timing(opacityAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+      ]).start();
+
+      // Effet de décryptage / brouillage de signal
+      const glitchInterval = setInterval(() => {
+        if (glitchCount >= maxGlitches) {
+          clearInterval(glitchInterval);
+          setDisplayText(originalText);
+          const nextGlitch = Math.random() * 5000 + 2000;
+          timeoutId = setTimeout(doGlitch, nextGlitch);
+          return;
+        }
+
+        let scrambled = "";
+        for (let i = 0; i < originalText.length; i++) {
+          if (originalText[i] === " ") {
+            scrambled += " ";
+          } else if (Math.random() > 0.4) {
+            scrambled += chars[Math.floor(Math.random() * chars.length)];
+          } else {
+            scrambled += originalText[i];
+          }
+        }
+        setDisplayText(scrambled);
+        glitchCount++;
+      }, 50); // Toutes les 50ms, les lettres changent
+    };
+
+    timeoutId = setTimeout(doGlitch, 1500);
+    return () => clearTimeout(timeoutId);
+  }, []);
+
+  return (
+    <View style={{ width: '100%', alignItems: 'center' }}>
+      <AnimatedExpeditionText
+        variant="title"
+        style={[styles.title, { opacity: opacityAnim }]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
+        {displayText}
+      </AnimatedExpeditionText>
+    </View>
+  );
+};
 
 export default function AppIndex() {
   const { user, signOut } = useAuth();
@@ -36,6 +148,8 @@ export default function AppIndex() {
       resizeMode="cover"
     >
       <View style={styles.veil} />
+      <NoiseTexture />
+      <ScannerLine />
 
       <Animated.View
         style={[
@@ -49,10 +163,13 @@ export default function AppIndex() {
         ]}
       >
 
-        {/* ── HAUT : bouton déconnexion discret ─────────────── */}
+        {/* ── HAUT : infos utilisateur & déconnexion ─────────────── */}
         <View style={styles.topBar}>
           <TouchableOpacity onPress={signOut} activeOpacity={0.6} style={styles.logoutBtn}>
-            <Text style={styles.logoutText}>DÉCONNEXION</Text>
+            <Text style={styles.logoutText}>
+              {user?.username ? user.username.toUpperCase() : 'DÉCONNEXION'}
+            </Text>
+            <LogOut size={16} color="rgba(180,190,175,0.6)" style={{ marginLeft: 8 }} />
           </TouchableOpacity>
         </View>
 
@@ -72,15 +189,8 @@ export default function AppIndex() {
             <Circle cx={(W - 56) / 2} cy={10} r={3} fill="none" stroke="#5a7052" strokeWidth={1}/>
           </Svg>
 
-          {/* Titre */}
-          <ExpeditionText
-            variant="title"
-            style={styles.title}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-          >
-            THE HUNT
-          </ExpeditionText>
+          {/* Titre Glitché */}
+          <GlitchTitle />
 
           {/* Règle inférieure avec coins */}
           <Svg width={W - 56} height={24} style={styles.ruleRow}>
@@ -100,34 +210,51 @@ export default function AppIndex() {
           </Svg>
 
           {/* Tagline */}
-          <ExpeditionText variant="mono" size="xs" style={styles.tagline}>
+          <ExpeditionText 
+            variant="mono" 
+            style={styles.tagline}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
             — PRÉPAREZ-VOUS POUR LA TRAQUE —
           </ExpeditionText>
 
         </View>
 
-        {/* ── BAS : bouton principal tactique ─────────────── */}
-        <View style={styles.bottom}>
+        {/* ── BAS : Menu Tactique Vertical ─────────────── */}
+        <View style={styles.bottomList}>
+          {/* Bouton Créer/Initier */}
           <TouchableOpacity
             onPress={() => {}}
-            activeOpacity={0.9}
-            style={styles.startBtn}
+            activeOpacity={0.7}
+            style={styles.listItem}
           >
-            {/* Effet biseauté haut */}
-            <View style={styles.btnBevelTop} />
-            
-            {/* Décorations angles (brackets) */}
-            <View style={styles.btnBracketTL} />
-            <View style={styles.btnBracketBR} />
-
-            <View style={styles.btnContent}>
-              <Text style={styles.startBtnText}>DÉMARRER LA TRAQUE</Text>
-              {/* Petit indicateur de direction */}
-              <Svg width={18} height={18} style={{ marginLeft: 16 }}>
-                <Path d="M 0 9 L 18 9 M 12 3 L 18 9 L 12 15" stroke="#e8d5a3" strokeWidth={2.5} fill="none" />
-              </Svg>
+            <View style={[styles.scannerOuterCircle, styles.outerRed]}>
+              <View style={[styles.scannerInnerCircle, styles.innerRed]}>
+                <Fingerprint size={26} color="#e8d5a3" />
+              </View>
             </View>
+            <View style={styles.listTextContainer}>
+              <Text style={styles.listTitle}>INITIER</Text>
+              <Text style={styles.listSub} numberOfLines={1}>CRÉER UNE TRAQUE</Text>
+            </View>
+          </TouchableOpacity>
 
+          {/* Bouton Rejoindre */}
+          <TouchableOpacity
+            onPress={() => {}}
+            activeOpacity={0.7}
+            style={styles.listItem}
+          >
+            <View style={[styles.scannerOuterCircle, styles.outerGold]}>
+              <View style={[styles.scannerInnerCircle, styles.innerGold]}>
+                <Radio size={26} color="#e8d5a3" />
+              </View>
+            </View>
+            <View style={styles.listTextContainer}>
+              <Text style={styles.listTitle}>REJOINDRE</Text>
+              <Text style={styles.listSub} numberOfLines={1}>SAISIR UN CODE</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -156,17 +283,19 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   logoutBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     backgroundColor: 'rgba(0,0,0,0.25)',
   },
   logoutText: {
     fontFamily: 'monospace',
-    fontSize: 9,
+    fontSize: 12,
     letterSpacing: 3,
-    color: 'rgba(180,190,175,0.45)',
+    color: 'rgba(180,190,175,0.65)',
   },
 
   // ── HERO ──
@@ -179,90 +308,118 @@ const styles = StyleSheet.create({
     marginVertical: 6,
   },
   title: {
-    fontSize: 88,
+    fontSize: Math.min(W * 0.2, 80),
     color: '#e8d5a3',
-    letterSpacing: 10,
-    lineHeight: 100,
+    letterSpacing: Math.min(W * 0.02, 8),
     textShadowColor: 'rgba(0,0,0,0.95)',
     textShadowOffset: { width: 0, height: 4 },
     textShadowRadius: 15,
     textAlign: 'center',
     width: '100%',
+    paddingTop: 30,
+    paddingBottom: 20,
+    includeFontPadding: false,
+    lineHeight: 90,
   },
   tagline: {
     color: '#5a6854',
-    fontSize: 13,
-    letterSpacing: 4,
+    fontSize: 10,
+    letterSpacing: 2,
     textAlign: 'center',
-    marginTop: 10,
-    opacity: 0.75,
+    marginTop: 12,
+    opacity: 0.8,
   },
 
-  // ── BOUTON TACTIQUE ──
-  bottom: {
+  // ── MENU TACTIQUE VERTICAL ──
+  bottomList: {
     width: '100%',
+    paddingBottom: 20,
+    gap: 24, // Espacement vertical entre les options
   },
-  startBtn: {
-    width: '100%',
-    height: 80,
-    backgroundColor: '#2d3a29',
-    borderWidth: 1,
-    borderColor: '#4a5e45',
+  listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 15,
-    elevation: 10,
+    width: '100%',
+    backgroundColor: 'rgba(10, 14, 10, 0.3)',
+    paddingRight: 16,
+    borderRadius: 40,
+    borderWidth: 1,
+    borderColor: 'rgba(232, 213, 163, 0.05)',
   },
-  btnBevelTop: {
+  scannerOuterCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  outerRed: {
+    borderColor: 'rgba(192, 57, 43, 0.4)',
+    backgroundColor: 'rgba(192, 57, 43, 0.05)',
+  },
+  outerGold: {
+    borderColor: 'rgba(232, 213, 163, 0.4)',
+    backgroundColor: 'rgba(232, 213, 163, 0.05)',
+  },
+  scannerInnerCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 8,
+  },
+  innerRed: {
+    backgroundColor: 'rgba(192, 57, 43, 0.15)',
+    borderColor: 'rgba(192, 57, 43, 0.9)',
+    shadowColor: '#c0392b',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 15,
+  },
+  innerGold: {
+    backgroundColor: 'rgba(232, 213, 163, 0.10)',
+    borderColor: 'rgba(232, 213, 163, 0.7)',
+    shadowColor: '#e8d5a3',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 15,
+  },
+  listTextContainer: {
+    marginLeft: 20,
+    flex: 1,
+  },
+  listTitle: {
+    fontFamily: 'monospace',
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 4,
+    color: '#e8d5a3',
+    textShadowColor: 'rgba(0,0,0,0.9)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
+  },
+  listSub: {
+    fontFamily: 'monospace',
+    color: '#8a9b81',
+    fontSize: 10,
+    letterSpacing: 2,
+    marginTop: 6,
+  },
+  scannerLine: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-  },
-  btnBracketTL: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    width: 12,
-    height: 12,
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-    borderColor: '#e8d5a3',
-    opacity: 0.6,
-  },
-  btnBracketBR: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    width: 12,
-    height: 12,
-    borderBottomWidth: 2,
-    borderRightWidth: 2,
-    borderColor: '#e8d5a3',
-    opacity: 0.6,
-  },
-  btnContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    zIndex: 2,
-  },
-  startBtnText: {
-    fontFamily: 'monospace',
-    fontSize: 16,
-    fontWeight: '900',
-    letterSpacing: 4,
-    color: '#e8d5a3',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    height: 1,
+    backgroundColor: 'rgba(90, 112, 82, 0.4)',
+    shadowColor: '#5a7052',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 5,
+    elevation: 3,
+    zIndex: 50,
   },
 });

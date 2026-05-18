@@ -1,49 +1,40 @@
-import { StyleSheet, View, Animated, Dimensions } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Animated,
+  Dimensions,
+  ImageBackground,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ExpeditionText } from '@/components/ui/ExpeditionText';
 import { ExpeditionButton } from '@/components/ui/ExpeditionButton';
 import { Spacing } from '@/constants/Spacing';
 import { useAuth } from '@/context/AuthContext';
-import { LucideCompass, LucideWifiOff } from 'lucide-react-native';
+import { LucideWifiOff, Target } from 'lucide-react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useEffect, useRef } from 'react';
-import Svg, { Path, G, Circle, Line, Ellipse } from 'react-native-svg';
+import Svg, { Path, G, Circle, Line, Defs, Pattern, Rect } from 'react-native-svg';
 
-const { width, height } = Dimensions.get('window');
+const { width: W } = Dimensions.get('window');
 
-const JungleCorners = ({ intensity = 1, dark = false }: { intensity?: number; dark?: boolean }) => {
-  const col = dark ? "#e8d5a3" : "#1a5c30";
-  const op = dark ? 0.13 * intensity : 0.08 * intensity;
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Svg width="100%" height="100%" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
-        <G opacity={op} fill={col}>
-          <Path d="M-20 -10 Q60 10 90 80 Q50 95 10 60 Q-15 35 -20 -10Z"/>
-          <Path d="M-30 30 Q50 25 75 100 Q30 105 -10 70 Q-28 55 -30 30Z"/>
-          <Path d="M5 -20 Q80 30 70 110 Q30 95 5 -20Z"/>
-          <Path d="M-25 70 Q45 55 65 130 Q20 138 -15 100 Q-28 85 -25 70Z"/>
-          <Path d="M40 -30 Q95 20 85 90 Q55 80 40 -30Z"/>
-        </G>
-        <G opacity={op} fill={col}>
-          <Path d="M410 -10 Q330 10 300 80 Q340 95 380 60 Q415 35 410 -10Z"/>
-          <Path d="M420 30 Q340 25 315 100 Q360 105 400 70 Q418 55 420 30Z"/>
-          <Path d="M385 -20 Q310 30 320 110 Q360 95 385 -20Z"/>
-          <Path d="M415 70 Q345 55 325 130 Q370 138 405 100 Q418 85 415 70Z"/>
-          <Path d="M350 -30 Q295 20 305 90 Q335 80 350 -30Z"/>
-        </G>
-        <G opacity={op * 0.7} fill="none" stroke={col} strokeWidth="1.5">
-          <Path d="M-5 200 Q15 230 5 270 Q-8 260 -5 200Z" fill={col}/>
-          <Path d="M395 350 Q378 380 388 420 Q400 410 395 350Z" fill={col}/>
-        </G>
-      </Svg>
-    </View>
-  );
-};
+const NoiseTexture = () => (
+  <View style={[StyleSheet.absoluteFill, { opacity: 0.12, zIndex: 1 }]} pointerEvents="none">
+    <Svg width="100%" height="100%">
+      <Defs>
+        <Pattern id="dots" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+          <Rect x="0" y="0" width="1" height="1" fill="#e8d5a3" />
+        </Pattern>
+      </Defs>
+      <Rect x="0" y="0" width="100%" height="100%" fill="url(#dots)" />
+    </Svg>
+  </View>
+);
 
 const CrosshairWatermark = ({ dark = false }: { dark?: boolean }) => (
   <View style={StyleSheet.absoluteFill} pointerEvents="none">
     <Svg width="100%" height="100%" viewBox="0 0 390 844">
-      <G opacity={dark ? 0.06 : 0.04} stroke={dark ? "#e8d5a3" : "#1a0e05"} strokeWidth="1" fill="none" transform="translate(195,422)">
+      <G opacity={dark ? 0.08 : 0.04} stroke={dark ? "#e8d5a3" : "#1a0e05"} strokeWidth="1" fill="none" transform="translate(195,422)">
         <Circle r="60"/>
         <Circle r="38"/>
         <Circle r="12"/>
@@ -59,146 +50,195 @@ const CrosshairWatermark = ({ dark = false }: { dark?: boolean }) => (
 export default function GatewayScreen() {
   const { isConnected } = useAuth();
   const router = useRouter();
-  const accentColor = useThemeColor({}, 'accent');
   const errorColor = useThemeColor({}, 'error');
-  const inkLight = "#7A5C3A";
+  const insets = useSafeAreaInsets();
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      })
+    ]).start();
   }, []);
 
   const renderOfflineState = () => (
     <View style={styles.stateContainer}>
-      <LucideWifiOff size={64} color={errorColor} />
+      <LucideWifiOff size={48} color={errorColor} />
       <ExpeditionText variant="title" size="xl" style={[styles.title, { color: errorColor }]}>
         Signal Perdu
       </ExpeditionText>
       <ExpeditionText variant="journal" style={styles.description}>
-        Impossible d'établir le lien avec la base. L'expédition ne peut pas commencer sans transmission radio.
+        Impossible d'établir le lien avec la base.
       </ExpeditionText>
       <View style={styles.spacer} />
       <ExpeditionText variant="mono" size="xs" style={styles.retryText}>
-        RECHERCHE DE FRÉQUENCES EN COURS...
+        RECHERCHE DE FRÉQUENCES...
       </ExpeditionText>
     </View>
   );
 
   const renderOnlineState = () => (
-    <View style={styles.stateContainer}>
-      <View style={styles.logoContainer}>
-        <Svg width="120" height="120" viewBox="0 0 120 120">
-          <G opacity="0.5" fill="#2d6a4f">
-            <Path d="M5 60 Q2 30 25 15 Q18 35 20 60Z"/>
-            <Path d="M115 60 Q118 30 95 15 Q102 35 100 60Z"/>
-            <Path d="M5 60 Q2 90 25 105 Q18 85 20 60Z"/>
-            <Path d="M115 60 Q118 90 95 105 Q102 85 100 60Z"/>
-          </G>
-          <Circle cx="60" cy="60" r="45" fill="none" stroke="#7a5c3a" strokeWidth="1" opacity="0.5"/>
-          <Circle cx="60" cy="60" r="30" fill="none" stroke="#c0392b" strokeWidth="1.5" opacity="0.7"/>
-          <Circle cx="60" cy="60" r="5" fill="#c0392b"/>
-          <Line x1="10" y1="60" x2="30" y2="60" stroke="#c0392b" strokeWidth="2"/>
-          <Line x1="90" y1="60" x2="110" y2="60" stroke="#c0392b" strokeWidth="2"/>
-          <Line x1="60" y1="10" x2="60" y2="30" stroke="#c0392b" strokeWidth="2"/>
-          <Line x1="60" y1="90" x2="60" y2="110" stroke="#c0392b" strokeWidth="2"/>
+    <>
+      <View style={styles.hero}>
+        <View style={styles.minimalLogo}>
+          <Target size={32} color="#c0392b" strokeWidth={1.5} opacity={0.8} />
+        </View>
+
+        <Svg width={W * 0.6} height={12} style={styles.ruleRow}>
+          <Line x1={0} y1={6} x2={W * 0.6} y2={6} stroke="#5a7052" strokeWidth={1} opacity={0.6}/>
+          <Circle cx={(W * 0.6) / 2} cy={6} r={2} fill="#e8d5a3" opacity={0.8}/>
         </Svg>
+
+        <ExpeditionText 
+          variant="title" 
+          style={styles.mainTitle}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+        >
+          THE{"\n"}HUNT
+        </ExpeditionText>
+        
+        <Svg width={W * 0.6} height={16} style={styles.ruleRow}>
+          <Line x1={0} y1={8} x2={W * 0.6} y2={8} stroke="#5a7052" strokeWidth={1} opacity={0.6}/>
+          <Path d={`M 0 0 L 0 16 M ${W * 0.6} 0 L ${W * 0.6} 16`} stroke="#e8d5a3" strokeWidth={1.5} opacity={0.6}/>
+        </Svg>
+        
+        <ExpeditionText variant="mono" size="xs" style={styles.tagline}>
+          IDENTIFICATION REQUISE
+        </ExpeditionText>
       </View>
 
-      <ExpeditionText variant="title" size="huge" style={styles.mainTitle}>
-        THE{"\n"}HUNT
-      </ExpeditionText>
-      
-      <ExpeditionText variant="journal" style={styles.tagline}>
-        Géolocalisation · Traque Réelle
-      </ExpeditionText>
-
-      <View style={styles.actions}>
-        <ExpeditionButton 
-          title="Créer un compte" 
-          variant="outline"
-          onPress={() => {}}
-          style={styles.button}
-        />
-        <ExpeditionButton 
-          title="Se connecter (Google)" 
-          variant="outline"
-          onPress={() => {}}
-          style={styles.button}
-        />
-        <ExpeditionButton 
-          title="Jouer en tant qu'invité" 
-          variant="primary"
-          onPress={() => router.push('/(auth)/guest')}
-          style={styles.button}
-        />
+      <View style={styles.bottomSection}>
+        <View style={styles.actions}>
+          <ExpeditionButton 
+            title="MODE INVITÉ" 
+            variant="primary"
+            onPress={() => router.push('/(auth)/guest')}
+            style={styles.primaryButton}
+          />
+        </View>
+        
+        <ExpeditionText variant="mono" size="xs" style={styles.footerText}>
+          v1.0.0 · EXPÉDITION · GPS REQUIS
+        </ExpeditionText>
       </View>
-      
-      <ExpeditionText variant="mono" size="xs" style={styles.footerText}>
-        v1.0.0 · EXPÉDITION · GPS REQUIS
-      </ExpeditionText>
-    </View>
+    </>
   );
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <JungleCorners dark intensity={1.5} />
+    <ImageBackground
+      source={require('@/assets/images/auth-bg.png')}
+      style={styles.root}
+      resizeMode="cover"
+    >
+      <View style={styles.veil} />
+      <NoiseTexture />
       <CrosshairWatermark dark />
-      {isConnected === false ? renderOfflineState() : renderOnlineState()}
-    </Animated.View>
+      
+      <Animated.View 
+        style={[
+          styles.layout, 
+          { 
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom + Spacing.xl,
+          }
+        ]}
+      >
+        {isConnected === false ? renderOfflineState() : renderOnlineState()}
+      </Animated.View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    padding: Spacing.xl,
-    justifyContent: 'center',
     backgroundColor: '#0d0802',
   },
+  veil: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(5, 7, 5, 0.75)', // Fond plus sombre pour meilleure lisibilité
+  },
+  layout: {
+    flex: 1,
+    paddingHorizontal: Spacing.xl,
+  },
   stateContainer: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 2,
   },
-  logoContainer: {
-    marginBottom: Spacing.sm,
+  hero: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomSection: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  minimalLogo: {
+    marginBottom: Spacing.lg,
+    padding: Spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(192, 57, 43, 0.3)',
+    borderRadius: 40,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  ruleRow: {
+    marginVertical: Spacing.md,
   },
   mainTitle: {
-    fontSize: 72,
+    fontSize: 68,
+    lineHeight: 68,
     color: "#e8d5a3",
     textAlign: "center",
-    lineHeight: 72,
-    letterSpacing: 4,
+    letterSpacing: 8,
+    textShadowColor: 'rgba(0,0,0,0.9)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 15,
   },
   tagline: {
-    fontSize: 11,
-    color: "#7a5c3a",
+    color: "#a4b59d",
     textAlign: "center",
-    letterSpacing: 3,
-    textTransform: "uppercase",
-    marginTop: Spacing.xs,
-    marginBottom: Spacing.xl,
+    letterSpacing: 4,
+    marginTop: Spacing.sm,
   },
   title: {
     marginTop: Spacing.lg,
     textAlign: 'center',
   },
   description: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.sm,
     textAlign: 'center',
-    paddingHorizontal: Spacing.md,
     opacity: 0.8,
   },
   actions: {
     width: '100%',
-    marginTop: Spacing.lg,
+    gap: Spacing.md,
   },
   button: {
-    marginBottom: Spacing.md,
+    width: '100%',
+    backgroundColor: 'rgba(10, 15, 10, 0.6)',
+    borderColor: 'rgba(122, 92, 58, 0.4)',
+  },
+  primaryButton: {
+    width: '100%',
   },
   spacer: {
     height: Spacing.xl,
@@ -207,9 +247,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   footerText: {
-    color: "rgba(122,92,58,0.6)",
+    color: "rgba(122,92,58,0.4)",
     textAlign: "center",
-    marginTop: Spacing.lg,
-    letterSpacing: 1,
+    marginTop: Spacing.xl,
+    letterSpacing: 2,
   }
 });

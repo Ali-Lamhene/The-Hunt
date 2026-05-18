@@ -1,9 +1,53 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, Animated, ImageBackground, Dimensions } from 'react-native';
 import { ExpeditionText } from './ExpeditionText';
-import Svg, { Circle, Line, Path, G } from 'react-native-svg';
+import Svg, { Circle, Line, Path, G, Defs, Pattern, Rect } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
+
+const NoiseTexture = () => (
+  <View style={[StyleSheet.absoluteFill, { opacity: 0.12, zIndex: 1 }]} pointerEvents="none">
+    <Svg width="100%" height="100%">
+      <Defs>
+        <Pattern id="dots" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+          <Rect x="0" y="0" width="1" height="1" fill="#e8d5a3" />
+        </Pattern>
+      </Defs>
+      <Rect x="0" y="0" width="100%" height="100%" fill="url(#dots)" />
+    </Svg>
+  </View>
+);
+
+const ScannerLine = () => {
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(translateY, {
+          toValue: height,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 4000,
+          useNativeDriver: true,
+        })
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.scannerLine,
+        { transform: [{ translateY }] }
+      ]}
+    />
+  );
+};
 
 interface ExpeditionSplashScreenProps {
   onAnimationComplete: () => void;
@@ -63,6 +107,8 @@ export function ExpeditionSplashScreen({ onAnimationComplete }: ExpeditionSplash
         style={styles.background}
         resizeMode="cover"
       >
+        <NoiseTexture />
+        <ScannerLine />
         <View style={styles.overlay}>
           
           {/* L'image splash-bg contient déjà le logo central parfaitement intégré. */}
@@ -114,11 +160,13 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   title: {
-    fontSize: 72,
+    fontSize: Math.min(width * 0.18, 72),
     color: "#e8d5a3",
-    letterSpacing: 12,
+    letterSpacing: Math.min(width * 0.02, 10),
+    paddingTop: 30,
+    paddingBottom: 20,
+    includeFontPadding: false,
     lineHeight: 85,
-    paddingVertical: 5,
     textShadowColor: 'rgba(0, 0, 0, 1)',
     textShadowOffset: { width: 0, height: 4 },
     textShadowRadius: 15,
@@ -159,5 +207,19 @@ const styles = StyleSheet.create({
     fontSize: 9,
     opacity: 0.5,
     letterSpacing: 3,
-  }
+  },
+  scannerLine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(90, 112, 82, 0.4)',
+    shadowColor: '#5a7052',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 5,
+    elevation: 3,
+    zIndex: 50,
+  },
 });
