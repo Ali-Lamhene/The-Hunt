@@ -12,7 +12,7 @@ import { ChevronLeft, Maximize2, X, Play } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ExpeditionText } from '@/components/ui/ExpeditionText';
 import { ExpeditionButton } from '@/components/ui/ExpeditionButton';
-import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
+import MapView, { Marker, Circle as MapCircle } from '@/components/ui/MapViewWrapper';
 import * as Location from 'expo-location';
 
 const tacticalMapStyle = [

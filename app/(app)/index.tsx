@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Text,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -13,7 +14,8 @@ import { ExpeditionText } from '@/components/ui/ExpeditionText';
 import { useAuth } from '@/context/AuthContext';
 import { useRef, useEffect, useState } from 'react';
 import Svg, { Line, Rect, Circle, Path, Defs, Pattern } from 'react-native-svg';
-import { LogOut, Fingerprint, Radio } from 'lucide-react-native';
+import { LogOut } from 'lucide-react-native';
+import TacticalBottomBar from '@/components/ui/TacticalBottomBar';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -136,12 +138,46 @@ export default function AppIndex() {
   const fade  = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(16)).current;
 
+  // Animations tactiques du radar central
+  const radarSweepAnim = useRef(new Animated.Value(0)).current;
+  const blipsBlinkAnim = useRef(new Animated.Value(0.4)).current;
+
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fade,  { toValue: 1, duration: 1400, useNativeDriver: true }),
       Animated.spring(slide, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
     ]).start();
+
+    // Balayage rotatif continu (360° en 6 secondes)
+    Animated.loop(
+      Animated.timing(radarSweepAnim, {
+        toValue: 1,
+        duration: 6000,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    // Clignotement périodique doux des balises d'agents (blips)
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(blipsBlinkAnim, {
+          toValue: 1.0,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(blipsBlinkAnim, {
+          toValue: 0.3,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   }, []);
+
+  const spin = radarSweepAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   return (
     <ImageBackground
@@ -223,44 +259,63 @@ export default function AppIndex() {
 
         </View>
 
-        {/* ── BAS : Menu Tactique Vertical ─────────────── */}
-        <View style={styles.bottomList}>
-          {/* Bouton Créer/Initier */}
-          <TouchableOpacity
-            onPress={() => router.push('/(app)/create')}
-            activeOpacity={0.7}
-            style={styles.listItem}
-          >
-            <View style={[styles.scannerOuterCircle, styles.outerRed]}>
-              <View style={[styles.scannerInnerCircle, styles.innerRed]}>
-                <Fingerprint size={26} color="#e8d5a3" />
-              </View>
-            </View>
-            <View style={styles.listTextContainer}>
-              <Text style={styles.listTitle}>INITIER</Text>
-              <Text style={styles.listSub} numberOfLines={1}>CRÉER UNE TRAQUE</Text>
-            </View>
-          </TouchableOpacity>
+        {/* ── BAS : Telemetry HUD / Radar Graphic ─────────────── */}
+        <View style={styles.hudContainer}>
+          <View style={{ width: 160, height: 160, position: 'relative' }}>
+            
+            {/* Couche 1: La grille radar de fond (statique) */}
+            <Svg width={160} height={160} style={StyleSheet.absoluteFillObject}>
+              {/* Halo or très doux en arrière-plan pour donner de la profondeur */}
+              <Circle cx={80} cy={80} r={75} fill="rgba(232, 213, 163, 0.015)" />
 
-          {/* Bouton Rejoindre */}
-          <TouchableOpacity
-            onPress={() => {}}
-            activeOpacity={0.7}
-            style={styles.listItem}
-          >
-            <View style={[styles.scannerOuterCircle, styles.outerGold]}>
-              <View style={[styles.scannerInnerCircle, styles.innerGold]}>
-                <Radio size={26} color="#e8d5a3" />
-              </View>
-            </View>
-            <View style={styles.listTextContainer}>
-              <Text style={styles.listTitle}>REJOINDRE</Text>
-              <Text style={styles.listSub} numberOfLines={1}>SAISIR UN CODE</Text>
-            </View>
-          </TouchableOpacity>
+              {/* Anneaux concentriques tactiques contrastés */}
+              <Circle cx={80} cy={80} r={75} stroke="rgba(232, 213, 163, 0.16)" strokeWidth={1.5} fill="none" />
+              <Circle cx={80} cy={80} r={60} stroke="rgba(232, 213, 163, 0.24)" strokeWidth={1.2} fill="none" strokeDasharray="5 5" />
+              <Circle cx={80} cy={80} r={44} stroke="rgba(232, 213, 163, 0.32)" strokeWidth={1.5} fill="none" />
+              <Circle cx={80} cy={80} r={28} stroke="rgba(232, 213, 163, 0.40)" strokeWidth={1.2} fill="none" strokeDasharray="3 3" />
+              <Circle cx={80} cy={80} r={12} stroke="rgba(232, 213, 163, 0.50)" strokeWidth={1.8} fill="none" />
+              
+              {/* Lignes de visée en croix contrastées */}
+              <Line x1={80} y1={4} x2={80} y2={156} stroke="rgba(232, 213, 163, 0.20)" strokeWidth={1.2} />
+              <Line x1={4} y1={80} x2={156} y2={80} stroke="rgba(232, 213, 163, 0.20)" strokeWidth={1.2} />
+            </Svg>
+
+            {/* Couche 2: Le faisceau radar balayeur en rotation continue */}
+            <Animated.View style={[StyleSheet.absoluteFillObject, { transform: [{ rotate: spin }] }]} pointerEvents="none">
+              <Svg width={160} height={160}>
+                {/* Ligne laser balayeuse */}
+                <Line x1={80} y1={80} x2={80} y2={5} stroke="rgba(232, 213, 163, 0.5)" strokeWidth={1.5} />
+                {/* Cône de traînée lumineuse dorée (angle de 45° calculé pour r=75) */}
+                <Path
+                  d="M 80 80 L 80 5 A 75 75 0 0 1 133 27 Z"
+                  fill="rgba(232, 213, 163, 0.05)"
+                />
+              </Svg>
+            </Animated.View>
+
+            {/* Couche 3: Les points d'échos (Blips) en pulsation clignotante */}
+            <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: blipsBlinkAnim }]} pointerEvents="none">
+              <Svg width={160} height={160}>
+                {/* Échos radars tactiques (Blips d'agents actifs) */}
+                {/* Écho 1: Allié or avec zone d'onde */}
+                <Circle cx={112} cy={60} r={4} fill="#e8d5a3" />
+                <Circle cx={112} cy={60} r={7.5} stroke="rgba(232, 213, 163, 0.45)" strokeWidth={1} fill="none" />
+                
+                {/* Écho 2: Proie hostile rouge avec zone d'alerte */}
+                <Circle cx={56} cy={108} r={3.2} fill="#c0392b" />
+                <Circle cx={56} cy={108} r={7} stroke="rgba(192, 57, 43, 0.60)" strokeWidth={1.2} fill="none" />
+
+                {/* Écho 3: Balise fixe passive */}
+                <Circle cx={92} cy={44} r={2.2} fill="#e8d5a3" />
+              </Svg>
+            </Animated.View>
+
+          </View>
         </View>
 
       </Animated.View>
+      
+      <TacticalBottomBar />
     </ImageBackground>
   );
 }
@@ -269,6 +324,8 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#0e1210',
+    height: Platform.OS === 'web' ? '100vh' : '100%' as any,
+    overflow: 'hidden', // Évite tout défilement parasite global sur le navigateur !
   },
   veil: {
     ...StyleSheet.absoluteFillObject,
@@ -277,7 +334,6 @@ const styles = StyleSheet.create({
   layout: {
     flex: 1,
     paddingHorizontal: 28,
-    justifyContent: 'space-between',
   },
 
   // ── TOP BAR ──
@@ -332,83 +388,15 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
 
-  // ── MENU TACTIQUE VERTICAL ──
-  bottomList: {
-    width: '100%',
-    paddingBottom: 20,
-    gap: 24, // Espacement vertical entre les options
-  },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    backgroundColor: 'rgba(10, 14, 10, 0.3)',
-    paddingRight: 16,
-    borderRadius: 40,
-    borderWidth: 1,
-    borderColor: 'rgba(232, 213, 163, 0.05)',
-  },
-  scannerOuterCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  outerRed: {
-    borderColor: 'rgba(192, 57, 43, 0.4)',
-    backgroundColor: 'rgba(192, 57, 43, 0.05)',
-  },
-  outerGold: {
-    borderColor: 'rgba(232, 213, 163, 0.4)',
-    backgroundColor: 'rgba(232, 213, 163, 0.05)',
-  },
-  scannerInnerCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 8,
-  },
-  innerRed: {
-    backgroundColor: 'rgba(192, 57, 43, 0.15)',
-    borderColor: 'rgba(192, 57, 43, 0.9)',
-    shadowColor: '#c0392b',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 15,
-  },
-  innerGold: {
-    backgroundColor: 'rgba(232, 213, 163, 0.10)',
-    borderColor: 'rgba(232, 213, 163, 0.7)',
-    shadowColor: '#e8d5a3',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 15,
-  },
-  listTextContainer: {
-    marginLeft: 20,
+  // ── TELEMETRY HUD ──
+  hudContainer: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 64, // Décale vers le haut pour compenser la hauteur du bottom bar
   },
-  listTitle: {
-    fontFamily: 'monospace',
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 4,
-    color: '#e8d5a3',
-    textShadowColor: 'rgba(0,0,0,0.9)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6,
-  },
-  listSub: {
-    fontFamily: 'monospace',
-    color: '#8a9b81',
-    fontSize: 10,
-    letterSpacing: 2,
-    marginTop: 6,
+  radarSvg: {
+    opacity: 1.0,
   },
   scannerLine: {
     position: 'absolute',

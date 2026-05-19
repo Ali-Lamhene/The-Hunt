@@ -16,7 +16,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import MapView, { Camera, Circle as MapCircle, Region } from 'react-native-maps';
+import MapView, { Circle as MapCircle } from '@/components/ui/MapViewWrapper';
+import type { Camera, Region } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, Pattern, Rect } from 'react-native-svg';
 
