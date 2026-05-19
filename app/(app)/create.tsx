@@ -2,6 +2,8 @@ import { ExpeditionButton } from '@/components/ui/ExpeditionButton';
 import { ExpeditionText } from '@/components/ui/ExpeditionText';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/context/AuthContext';
+import { createLobby } from '@/services/firebase/lobby.service';
 import { ChevronLeft, Map as MapIcon, Maximize2, Minus, Plus, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -116,6 +118,8 @@ interface Coordinate {
 export default function CreateGameScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const [isCreating, setIsCreating] = useState(false);
 
   const [radius, setRadius] = useState<number>(400);
   const [duration, setDuration] = useState<number>(60);
@@ -185,7 +189,27 @@ export default function CreateGameScreen() {
     setIsMapExpanded(false);
   };
 
-
+  const handleCreateLobby = async () => {
+    if (!user || !centerCoord) return;
+    setIsCreating(true);
+    try {
+      const lobbyId = await createLobby(user.id, user.username, {
+        center: {
+          latitude: centerCoord.latitude,
+          longitude: centerCoord.longitude,
+        },
+        radius,
+        durationMinutes: duration,
+        maxPlayers: players,
+      });
+      router.push(`/lobby/${lobbyId}`);
+    } catch (error: any) {
+      console.error('Erreur de création de lobby:', error);
+      alert('Impossible de générer le lobby: ' + (error?.message || 'Erreur réseau.'));
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   return (
     <ImageBackground
@@ -315,11 +339,15 @@ export default function CreateGameScreen() {
 
           {/* Launch Button */}
           <View style={styles.launchArea}>
-            <ExpeditionButton
-              title="GÉNÉRER LE LOBBY"
-              onPress={() => { }}
-              variant="primary"
-            />
+            {isCreating ? (
+              <ActivityIndicator size="large" color="#e8d5a3" style={{ paddingVertical: 16 }} />
+            ) : (
+              <ExpeditionButton
+                title="GÉNÉRER LE LOBBY"
+                onPress={handleCreateLobby}
+                variant="primary"
+              />
+            )}
           </View>
 
         </ScrollView>
