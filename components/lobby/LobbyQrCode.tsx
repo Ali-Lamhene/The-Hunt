@@ -17,7 +17,10 @@ interface LobbyQrCodeProps {
 }
 
 export default function LobbyQrCode({ lobbyId }: LobbyQrCodeProps) {
-  const formattedCode = lobbyId.toUpperCase();
+  // Format code to "xxx - xxx" if 6 digits
+  const formattedCode = lobbyId.length === 6 
+    ? `${lobbyId.slice(0, 3)} - ${lobbyId.slice(3)}`
+    : lobbyId.toUpperCase();
 
   const handleCopyCode = () => {
     Clipboard.setString(lobbyId);
@@ -34,7 +37,7 @@ export default function LobbyQrCode({ lobbyId }: LobbyQrCodeProps) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.parchmentPage}>
+      <View style={styles.brassPlate}>
         {/* Ancient book corner decorations */}
         <View style={[styles.cornerDecorator, styles.topLeftCorner]} />
         <View style={[styles.cornerDecorator, styles.topRightCorner]} />
@@ -43,16 +46,16 @@ export default function LobbyQrCode({ lobbyId }: LobbyQrCodeProps) {
 
         {/* Section Header */}
         <View style={styles.headerContainer}>
-          <Compass size={18} color="#7A5C3A" style={styles.compassIcon} />
-          <ExpeditionText variant="journal" size="xs" color="#7A5C3A" style={styles.headerLabel}>
+          <Compass size={18} color="#E8D5A3" style={styles.compassIcon} />
+          <ExpeditionText variant="journal" size="xs" color="#E8D5A3" style={styles.headerLabel}>
             {"/// COORDONNÉES D'EXPÉDITION"}
           </ExpeditionText>
         </View>
 
         {/* Code display */}
         <View style={styles.codeContainer}>
-          <ExpeditionText variant="title" size="xl" color="#1A0E05" style={styles.codeText}>
-            {formattedCode.split('').join(' ')}
+          <ExpeditionText variant="title" size="xl" color="#FAF6EE" style={styles.codeText}>
+            {formattedCode}
           </ExpeditionText>
           
           <TouchableOpacity 
@@ -60,7 +63,7 @@ export default function LobbyQrCode({ lobbyId }: LobbyQrCodeProps) {
             onPress={handleCopyCode}
             activeOpacity={0.7}
           >
-            <Copy size={14} color="#7A5C3A" />
+            <Copy size={14} color="#E8D5A3" />
           </TouchableOpacity>
         </View>
 
@@ -72,14 +75,14 @@ export default function LobbyQrCode({ lobbyId }: LobbyQrCodeProps) {
             <QRCode
               value={lobbyId}
               size={150}
-              color="#0D0802"
-              backgroundColor="#F4EDE0"
+              color="#E8D5A3"
+              backgroundColor="#141E15"
             />
           </View>
         </View>
 
-        <ExpeditionText variant="journal" size="xs" color="#7A5C3A" style={styles.instructions}>
-          {"Scannez cette boussole pour rejoindre l'équipe"}
+        <ExpeditionText variant="journal" size="xs" color="#E8D5A3" style={styles.instructions}>
+          {"Scannez le QR code pour rejoindre la partie"}
         </ExpeditionText>
       </View>
     </View>
@@ -92,17 +95,17 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
   },
-  parchmentPage: {
-    backgroundColor: '#F4EDE0',
+  brassPlate: {
+    backgroundColor: '#141E15', // Deep forest canopy green/black
     borderWidth: 2,
-    borderColor: '#7A5C3A',
+    borderColor: '#7A5C3A', // Laiton/Bronze border
     borderRadius: 6,
     padding: 16,
     position: 'relative',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 4,
   },
@@ -163,37 +166,38 @@ const styles = StyleSheet.create({
   copyBtn: {
     padding: 6,
     borderWidth: 1,
-    borderColor: 'rgba(122, 92, 58, 0.25)',
+    borderColor: 'rgba(232, 213, 163, 0.25)',
     borderRadius: 4,
-    backgroundColor: 'rgba(122, 92, 58, 0.05)',
+    backgroundColor: 'rgba(232, 213, 163, 0.05)',
   },
   divider: {
     width: '90%',
     height: 1,
     backgroundColor: '#7A5C3A',
-    opacity: 0.2,
+    opacity: 0.3,
     marginBottom: 14,
   },
   qrContainer: {
     padding: 10,
-    backgroundColor: '#FAF6EE',
+    backgroundColor: '#141E15', // Same deep tactical green
     borderWidth: 1.5,
-    borderColor: '#3D2410',
+    borderColor: '#7A5C3A', // Brass border
     borderRadius: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
   },
   qrWrapper: {
     padding: 4,
-    backgroundColor: '#F4EDE0',
+    backgroundColor: '#141E15',
   },
   instructions: {
     marginTop: 12,
     textAlign: 'center',
     letterSpacing: 0.5,
     fontStyle: 'italic',
+    opacity: 0.8,
   },
 });
