@@ -265,22 +265,9 @@ export default function LobbyScreen() {
             <ExpeditionText variant="mono" size="xs" style={styles.subtitle}>PRÉPARATION DE LA PROCHAINE EXPÉDITION</ExpeditionText>
           </View>
 
-          {/* Statut d'acquisition des agents */}
-          <View style={styles.statusBanner}>
-            <View style={[styles.statusIndicator, playersNeeded > 0 ? styles.statusWarning : styles.statusSuccess]}>
-              <View style={[styles.statusDot, playersNeeded > 0 ? styles.dotWarning : styles.dotSuccess]} />
-              <ExpeditionText variant="mono" size="xs" style={playersNeeded > 0 ? styles.statusTextWarning : styles.statusTextSuccess}>
-                {playersNeeded > 0 
-                  ? `IL MANQUE ${playersNeeded} J.`
-                  : "TOUS LES JOUEURS SONT LÀ"
-                }
-              </ExpeditionText>
-            </View>
-          </View>
-
-          {/* Bouton de démarrage rectangulaire minimaliste au centre, en dessous du bandeau */}
-          {isHost && (
-            <View style={styles.topLaunchBtnContainer}>
+          {/* Bouton de démarrage / Statut de préparation au centre */}
+          <View style={styles.topLaunchBtnContainer}>
+            {isHost ? (
               <TouchableOpacity
                 onPress={handleStartGame}
                 disabled={playersNeeded > 0 || isActionLoading}
@@ -291,12 +278,18 @@ export default function LobbyScreen() {
                   <ActivityIndicator size="small" color="#e8d5a3" />
                 ) : (
                   <ExpeditionText variant="mono" size="xs" style={[styles.barText, playersNeeded > 0 ? styles.barTextDisabled : styles.barTextActive]}>
-                    {playersNeeded > 0 ? "INITIATION VERROUILLÉE" : "DÉMARRER L'EXPÉDITION"}
+                    {playersNeeded > 0 ? `IL MANQUE ${playersNeeded} JOUEUR(S)` : "DÉMARRER L'EXPÉDITION"}
                   </ExpeditionText>
                 )}
               </TouchableOpacity>
-            </View>
-          )}
+            ) : (
+              <View style={[styles.tacticalBarBtn, styles.barDisabled]}>
+                <ExpeditionText variant="mono" size="xs" style={[styles.barText, styles.barTextDisabled]}>
+                  {playersNeeded > 0 ? `IL MANQUE ${playersNeeded} JOUEUR(S)` : "ATTENTE DU LANCEMENT..."}
+                </ExpeditionText>
+              </View>
+            )}
+          </View>
 
           {/* QR Code de Salon pour inviter / rejoindre */}
           {lobbyId && (
