@@ -3,6 +3,24 @@ import { database } from './config';
 import { Lobby, LobbyParams, Player, LobbyStatus } from '../../types/lobby';
 
 /**
+ * Génère un identifiant unique à 6 chiffres pour un nouveau lobby.
+ */
+async function generateUniqueLobbyId(): Promise<string> {
+  let isUnique = false;
+  let code = '';
+  while (!isUnique) {
+    // Génère un code à 6 chiffres
+    code = Math.floor(100000 + Math.random() * 900000).toString();
+    const lobbyRef = ref(database, `lobbies/${code}`);
+    const snapshot = await get(lobbyRef);
+    if (!snapshot.exists()) {
+      isUnique = true;
+    }
+  }
+  return code;
+}
+
+/**
  * Crée un nouveau lobby dans la base de données et y ajoute le créateur (host) comme premier joueur.
  */
 export async function createLobby(
@@ -10,13 +28,8 @@ export async function createLobby(
   hostName: string,
   initialParams: LobbyParams
 ): Promise<string> {
-  const lobbiesRef = ref(database, 'lobbies');
-  const newLobbyRef = push(lobbiesRef);
-  const lobbyId = newLobbyRef.key;
-
-  if (!lobbyId) {
-    throw new Error('Impossible de générer un ID de lobby unique.');
-  }
+  const lobbyId = await generateUniqueLobbyId();
+  const lobbyRef = ref(database, `lobbies/${lobbyId}`);
 
   const hostPlayer: Player = {
     displayName: hostName,
@@ -35,7 +48,7 @@ export async function createLobby(
     createdAt: Date.now(),
   };
 
-  await set(newLobbyRef, newLobby);
+  await set(lobbyRef, newLobby);
   return lobbyId;
 }
 
