@@ -8,6 +8,7 @@ import { useLobby } from '@/hooks/useLobby';
 import { joinLobby, leaveLobby, toggleReady, updateLobbyStatus, updatePlayerLocation } from '@/services/firebase/lobby.service';
 import RadarBackground from '@/components/lobby/RadarBackground';
 import PlayerList from '@/components/lobby/PlayerList';
+import LobbyQrCode from '@/components/lobby/LobbyQrCode';
 import { ChevronLeft, Maximize2, X, Play } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ExpeditionText } from '@/components/ui/ExpeditionText';
@@ -295,6 +296,11 @@ export default function LobbyScreen() {
                 )}
               </TouchableOpacity>
             </View>
+          )}
+
+          {/* QR Code de Salon pour inviter / rejoindre */}
+          {lobbyId && (
+            <LobbyQrCode lobbyId={lobbyId} />
           )}
 
           {/* Résumé tactique des paramètres déjà configurés */}

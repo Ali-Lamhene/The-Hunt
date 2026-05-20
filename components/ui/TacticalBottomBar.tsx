@@ -29,10 +29,11 @@ import Svg, { Line, Rect, Circle, Path, Defs, Pattern } from 'react-native-svg';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg); // Force le moteur graphique à redessiner le canevas SVG selon la hauteur animée !
 import * as Haptics from 'expo-haptics';
-import { Fingerprint, X } from 'lucide-react-native';
+import { Fingerprint, X, QrCode } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 import { joinLobby } from '@/services/firebase/lobby.service';
 import { ExpeditionText } from './ExpeditionText';
+import QrCodeScannerModal from './QrCodeScannerModal';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -52,6 +53,7 @@ export default function TacticalBottomBar() {
   // Code de salon (PIN)
   const [pinCode, setPinCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
+  const [isScannerVisible, setIsScannerVisible] = useState(false);
 
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -407,9 +409,10 @@ export default function TacticalBottomBar() {
   };
 
   // Validation et Connexion
-  const handleValidateJoin = async () => {
+  const handleValidateJoin = async (overrideCode?: string) => {
     triggerHaptic();
-    if (pinCode.length < 3) {
+    const activeCode = overrideCode || pinCode;
+    if (activeCode.length < 3) {
       Alert.alert(
         language === 'FR' ? 'CANAL INVALIDE' : 'INVALID CODE',
         language === 'FR' ? 'Le code saisi est trop court.' : 'Code is too short.'
@@ -419,7 +422,7 @@ export default function TacticalBottomBar() {
     if (!user) return;
 
     setIsJoining(true);
-    const targetLobby = pinCode.trim().toLowerCase();
+    const targetLobby = activeCode.trim().toLowerCase();
     try {
       await joinLobby(targetLobby, user.id, user.username);
       closeMenu();
@@ -432,6 +435,12 @@ export default function TacticalBottomBar() {
     } finally {
       setIsJoining(false);
     }
+  };
+
+  const handleQrScan = async (code: string) => {
+    setIsScannerVisible(false);
+    setPinCode(code);
+    await handleValidateJoin(code);
   };
 
   // Hauteur dynamique sécurisée Android / iOS Safe Area
@@ -692,7 +701,28 @@ export default function TacticalBottomBar() {
               ]}>
                 <View style={styles.menuDivider} />
 
-                {/* Champ d'affichage du PIN saisi */}
+                {/* Section 1 : Rejoindre via QR Code */}
+                <TouchableOpacity
+                  style={styles.bigQrScanBtn}
+                  onPress={() => setIsScannerVisible(true)}
+                  activeOpacity={0.8}
+                >
+                  <QrCode size={20} color="#FAF6EE" style={{ marginRight: 8 }} />
+                  <ExpeditionText variant="title" size="sm" color="#FAF6EE">
+                    SCAN QR CODE
+                  </ExpeditionText>
+                </TouchableOpacity>
+
+                {/* Séparateur Tactique */}
+                <View style={styles.orSeparatorContainer}>
+                  <View style={styles.separatorLine} />
+                  <ExpeditionText variant="journal" size="xs" color="#7A5C3A" style={styles.orText}>
+                    OU SAISIR UN CODE MANUEL
+                  </ExpeditionText>
+                  <View style={styles.separatorLine} />
+                </View>
+
+                {/* Section 2 : Rejoindre par Code PIN */}
                 <View style={styles.pinDisplay}>
                   <ExpeditionText variant="title" style={styles.pinText}>
                     {pinCode.padEnd(6, '_').split('').join(' ')}
@@ -733,7 +763,7 @@ export default function TacticalBottomBar() {
 
                   <TouchableOpacity
                     style={[styles.actionBtn, styles.actionBtnConfirm]}
-                    onPress={handleValidateJoin}
+                    onPress={() => handleValidateJoin()}
                     disabled={isJoining}
                   >
                     <ExpeditionText variant="mono" size="xs" style={styles.actionBtnConfirmText}>
@@ -835,6 +865,11 @@ export default function TacticalBottomBar() {
         </View>
       </View>
     )}
+      <QrCodeScannerModal 
+        visible={isScannerVisible} 
+        onClose={() => setIsScannerVisible(false)} 
+        onScan={handleQrScan} 
+      />
     </>
   );
 }
@@ -1148,6 +1183,35 @@ const styles = StyleSheet.create({
   },
 
   // ── CLAVIER PIN NUMÉRIQUE VIRTUEL ──
+  bigQrScanBtn: {
+    backgroundColor: '#3E2723',
+    borderWidth: 2,
+    borderColor: '#7A5C3A',
+    borderRadius: 8,
+    width: '100%',
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  orSeparatorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginVertical: 12,
+    gap: 12,
+  },
+  separatorLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#7A5C3A',
+    opacity: 0.25,
+  },
+  orText: {
+    letterSpacing: 1.5,
+    fontSize: 10,
+  },
   pinDisplay: {
     backgroundColor: 'rgba(3, 5, 4, 0.8)',
     borderWidth: 1,

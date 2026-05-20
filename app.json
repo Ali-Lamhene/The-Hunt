@@ -37,7 +37,13 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "L'accès à la caméra est requis pour lire le code d'activation de l'expédition."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

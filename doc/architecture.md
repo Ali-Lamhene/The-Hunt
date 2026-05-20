@@ -57,3 +57,18 @@ src/
 ## 5. Gestion des Erreurs
 *   Utiliser des `ErrorBoundary` au niveau des écrans critiques.
 *   Logger les erreurs GPS ou réseau via un service dédié (ex: Sentry) en production.
+
+---
+
+## 6. Direction Artistique & Thème Graphique
+*   **Thème "Jungle Expedition"** : L'esthétique s'inspire d'un univers d'exploration sauvage (Indiana Jones, carnets d'expédition, parchemins anciens, boussoles en laiton/cuivre). Exit le look technologique militaire ou numérique moderne.
+*   **Charte des Couleurs (Système Organique)** :
+    *   Fond de la Canopée : `#0D0802`
+    *   Texte et contours principaux : Parchemin (`#F4EDE0`), Crème (`#FAF6EE`), Encre (`#1A0E05`), Bronze/Laiton (`#7A5C3A`, `#3D2410`).
+    *   Indicateurs tactiques : Rouge Prédateur/Chasseur (`#C0392B`), Vert Proie/Survivant (`#2D6A4F`), Ambre d'alerte (`#D4830A`).
+*   **Typographie & Éléments Visuels** :
+    *   Titres : Police "Display" d'aspect gravé/pochoir (`BebasNeue`).
+    *   Sous-titres/Journal : Police Serif de style machine à écrire / manuscrit (`SpecialElite`).
+    *   Cadrans et chronomètres : Police monospace (`monospace`).
+    *   Les fenêtres modales apparaissent comme des carnets d'expédition ouverts ou des plaques de pierre gravées (contours rustiques et laiton).
+
