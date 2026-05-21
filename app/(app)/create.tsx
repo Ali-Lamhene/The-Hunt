@@ -10,7 +10,8 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  ImageBackground,
+  Image,
+  Platform,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -213,11 +214,12 @@ export default function CreateGameScreen() {
   };
 
   return (
-    <ImageBackground
-      source={require('@/assets/images/home-bg.png')}
-      style={styles.root}
-      resizeMode="cover"
-    >
+    <View style={styles.root}>
+      <Image
+        source={require('@/assets/images/home-bg.png')}
+        style={StyleSheet.absoluteFillObject}
+        resizeMode="cover"
+      />
       <View style={styles.veil} />
       <NoiseTexture />
       <ScannerLine />
@@ -433,7 +435,7 @@ export default function CreateGameScreen() {
           </View>
         </View>
       )}
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -441,6 +443,8 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#0d0802',
+    height: Platform.OS === 'web' ? '100vh' : '100%' as any,
+    overflow: 'hidden',
   },
   veil: {
     ...StyleSheet.absoluteFillObject,
